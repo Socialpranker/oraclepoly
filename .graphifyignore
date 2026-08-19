@@ -1,0 +1,39 @@
+# === OraclePoly .graphifyignore ===
+# Оптимизация: минимизация токенов, максимум ценности графа
+
+# --- Raw data (нулевая семантическая ценность) ---
+research/data/
+research/**/*.csv
+research/**/sources/*.json
+research/**/__pycache__/
+
+# --- Сгенерированные файлы ---
+docs/*.html
+**/*.png
+**/*.jpg
+
+# --- Стандартные исключения ---
+__pycache__/
+.venv/
+node_modules/
+dist/
+client/dist/
+*.pyc
+*.pyo
+.DS_Store
+
+# --- Конфиги и инфра (не нужны в графе знаний) ---
+.github/
+docker-compose*.yml
+Dockerfile*
+*.lock
+package-lock.json
+
+# --- Миграции SQL (шум, не бизнес-логика) ---
+migrations/
+
+# --- Кэши и временные ---
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+graphify-out/

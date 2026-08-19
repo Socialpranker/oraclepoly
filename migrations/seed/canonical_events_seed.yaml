@@ -1,0 +1,381 @@
+# Canonical events seed — top cross-venue events для PolyOracle multi-venue (PDF §14.b).
+#
+# Manual mapping для Phase 1. Phase 2: auto-match через embeddings + LLM
+# extraction из markets table.
+#
+# Структура:
+#   events:
+#     - slug: <url-safe-id>
+#       title: <human-readable>
+#       category: politics|sports|economics|crypto|macro
+#       description: <context>
+#       resolution_criterion: <formal>
+#       resolution_source: <where to look>
+#       expected_resolves_at: <ISO timestamp, optional>
+#       venues:
+#         - venue: polymarket|kalshi|manifold|betfair|smarkets|limitless|drift_predict
+#           market_id: <venue-specific id>
+#           url: <direct link, optional>
+#           side: direct|inverse  (default direct)
+#
+# Это шаблон. market_id'ы будут заполнены после reconnect Kalshi credentials
+# (тогда matcher Phase 1.1 авто-обогатит). Для Phase 1 manual seed для
+# development + integration test.
+#
+# Status note: market_id поля = placeholders для большинства events.
+# Реальные id обновятся через update_canonical_mapping.py когда venue API
+# available.
+
+events:
+  # ─── ECONOMICS / MACRO ─────────────────────────────────────────────
+  - slug: fed-march-2026-rate-decision
+    title: Fed March 2026 FOMC rate decision
+    category: economics
+    description: |
+      March 18-19 2026 FOMC meeting outcome. Cross-venue marquee event —
+      Polymarket активен, Kalshi institutional flow, oft Manifold для
+      retail sentiment baseline.
+    resolution_criterion: effective federal funds rate target range change
+    resolution_source: Federal Reserve press release post-FOMC
+    expected_resolves_at: 2026-03-19T19:00:00Z
+    venues:
+      - venue: polymarket
+        market_id: "fed-march-2026-rate-decision"
+        side: direct
+      - venue: kalshi
+        market_id: "FED-MAR-2026"
+        side: direct
+      - venue: manifold
+        market_id: "fed-march-2026"
+        side: direct
+
+  - slug: fed-may-2026-rate-decision
+    title: Fed May 2026 FOMC rate decision
+    category: economics
+    description: May 6-7 2026 FOMC meeting outcome.
+    resolution_criterion: federal funds rate target range
+    resolution_source: Federal Reserve press release
+    expected_resolves_at: 2026-05-07T19:00:00Z
+    venues:
+      - venue: polymarket
+        market_id: "fed-may-2026"
+        side: direct
+      - venue: kalshi
+        market_id: "FED-MAY-2026"
+        side: direct
+
+  - slug: us-cpi-march-2026-yoy
+    title: US CPI YoY March 2026 release
+    category: economics
+    description: Consumer Price Index YoY for March 2026.
+    resolution_criterion: BLS official CPI release
+    resolution_source: Bureau of Labor Statistics
+    expected_resolves_at: 2026-04-10T13:00:00Z
+    venues:
+      - venue: polymarket
+        market_id: "us-cpi-march-2026"
+        side: direct
+      - venue: kalshi
+        market_id: "CPI-MAR-2026"
+        side: direct
+
+  - slug: us-unemployment-april-2026
+    title: US unemployment rate April 2026
+    category: economics
+    description: BLS monthly unemployment release for April 2026.
+    resolution_criterion: U-3 unemployment rate official figure
+    resolution_source: Bureau of Labor Statistics
+    expected_resolves_at: 2026-05-02T13:00:00Z
+    venues:
+      - venue: polymarket
+        market_id: "us-unemployment-apr-2026"
+        side: direct
+      - venue: kalshi
+        market_id: "UNEMP-APR-2026"
+        side: direct
+
+  # ─── CRYPTO ────────────────────────────────────────────────────────
+  - slug: btc-100k-by-eoy-2026
+    title: BTC reaches $100k by end of 2026
+    category: crypto
+    description: |
+      Will BTC spot price hit $100,000 USD на любой major venue
+      (Coinbase/Binance) до 2026-12-31. Также PDF §7.5 — hedge candidate
+      с BTC perp.
+    resolution_criterion: spot price ≥ $100,000 на one of Binance/Coinbase/Kraken
+    resolution_source: TradingView official ticker
+    expected_resolves_at: 2026-12-31T23:59:59Z
+    venues:
+      - venue: polymarket
+        market_id: "btc-100k-2026"
+        side: direct
+      - venue: kalshi
+        market_id: "BTC-100K-2026"
+        side: direct
+      - venue: manifold
+        market_id: "btc-100k-eoy-2026"
+        side: direct
+
+  - slug: eth-5k-by-eoy-2026
+    title: ETH reaches $5k by end of 2026
+    category: crypto
+    description: ETH spot price hitting $5,000 USD до 2026-12-31.
+    resolution_criterion: spot price ≥ $5,000
+    resolution_source: TradingView ETH/USD
+    expected_resolves_at: 2026-12-31T23:59:59Z
+    venues:
+      - venue: polymarket
+        market_id: "eth-5k-2026"
+        side: direct
+      - venue: manifold
+        market_id: "eth-5k-eoy-2026"
+        side: direct
+
+  # ─── SPORTS ────────────────────────────────────────────────────────
+  - slug: nfl-superbowl-2026-winner
+    title: NFL Super Bowl LX 2026 winner
+    category: sports
+    description: |
+      Super Bowl LX February 2026, played in Levi's Stadium. Cross-venue
+      paired Polymarket↔Kalshi. PDF §7.1 — Sports category работает хорошо
+      на Betfair после opening.
+    resolution_criterion: winning team как announced by NFL
+    resolution_source: NFL official announcement
+    expected_resolves_at: 2026-02-08T23:59:59Z
+    venues:
+      - venue: polymarket
+        market_id: "superbowl-2026-winner"
+        side: direct
+      - venue: kalshi
+        market_id: "SB-2026-WINNER"
+        side: direct
+      - venue: betfair
+        market_id: "SB-2026"
+        side: direct
+
+  - slug: nba-finals-2026-winner
+    title: NBA Finals 2026 winner
+    category: sports
+    description: NBA Championship 2026 — winning team.
+    resolution_criterion: winning team как announced by NBA
+    resolution_source: NBA Finals broadcast
+    expected_resolves_at: 2026-06-20T23:59:59Z
+    venues:
+      - venue: polymarket
+        market_id: "nba-finals-2026"
+        side: direct
+      - venue: kalshi
+        market_id: "NBA-2026"
+        side: direct
+
+  - slug: world-cup-2026-winner
+    title: FIFA World Cup 2026 winner
+    category: sports
+    description: |
+      FIFA World Cup 2026 hosted USA+Mexico+Canada. Betfair primary venue,
+      Polymarket secondary. PDF §7.1 World Cup paired.
+    resolution_criterion: winning national team final match
+    resolution_source: FIFA official
+    expected_resolves_at: 2026-07-19T23:59:59Z
+    venues:
+      - venue: polymarket
+        market_id: "wc-2026-winner"
+        side: direct
+      - venue: betfair
+        market_id: "WC-2026"
+        side: direct
+      - venue: kalshi
+        market_id: "WC-2026"
+        side: direct
+
+  # ─── POLITICS ──────────────────────────────────────────────────────
+  - slug: trump-impeachment-2026
+    title: Will Trump be impeached в 2026?
+    category: politics
+    description: |
+      Will House начнёт impeachment proceedings against current administration
+      до 2026-12-31. PDF §7.6 — US politics paired Polymarket↔Kalshi.
+    resolution_criterion: official House vote initiating impeachment
+    resolution_source: Congressional records (clerk.house.gov)
+    expected_resolves_at: 2026-12-31T23:59:59Z
+    venues:
+      - venue: polymarket
+        market_id: "trump-impeachment-2026"
+        side: direct
+      - venue: kalshi
+        market_id: "IMPEACH-2026"
+        side: direct
+
+  - slug: democrat-house-majority-2026
+    title: Democrats win House majority 2026 midterms
+    category: politics
+    description: Democrats achieve 218+ seats in House после November 2026 election.
+    resolution_criterion: AP race calls + secretary of state certification
+    resolution_source: AP / official state certifications
+    expected_resolves_at: 2026-11-15T23:59:59Z
+    venues:
+      - venue: polymarket
+        market_id: "house-2026-dem"
+        side: direct
+      - venue: kalshi
+        market_id: "HOUSE-2026-DEM"
+        side: direct
+      - venue: betfair
+        market_id: "HOUSE-2026"
+        side: direct
+
+  - slug: republican-senate-majority-2026
+    title: Republicans hold Senate majority after 2026 midterms
+    category: politics
+    description: |
+      Republicans hold 51+ seats в Senate после November 2026 election.
+      Inverse semantics — Polymarket "Dems win Senate" = inverse этого.
+    resolution_criterion: AP race calls + state certification
+    resolution_source: AP / official state certifications
+    expected_resolves_at: 2026-11-15T23:59:59Z
+    venues:
+      - venue: polymarket
+        market_id: "senate-2026-dem"
+        side: inverse
+      - venue: kalshi
+        market_id: "SENATE-2026-REP"
+        side: direct
+
+  - slug: trump-leave-office-2026
+    title: Trump leaves office before 2027
+    category: politics
+    description: |
+      Trump no longer president (resign/impeach/incapacity/death)
+      до 2027-01-01.
+    resolution_criterion: official cessation of presidential duties
+    resolution_source: White House announcement / 25th amendment / impeachment
+    expected_resolves_at: 2026-12-31T23:59:59Z
+    venues:
+      - venue: polymarket
+        market_id: "trump-leaves-2026"
+        side: direct
+      - venue: kalshi
+        market_id: "POTUS-2026"
+        side: direct
+      - venue: manifold
+        market_id: "trump-leaves-2026"
+        side: direct
+
+  # ─── MACRO / FOREIGN ───────────────────────────────────────────────
+  - slug: russia-ukraine-ceasefire-2026
+    title: Russia-Ukraine ceasefire by end 2026
+    category: macro
+    description: |
+      Formal ceasefire signed by both governments до 2026-12-31.
+      ⚠ PDF blacklist territory — added only для cross-venue divergence
+      tracking, NOT для D44 trading (blacklisted там).
+    resolution_criterion: official ceasefire agreement signed
+    resolution_source: government announcements both sides
+    expected_resolves_at: 2026-12-31T23:59:59Z
+    notes: "PDF §7.3 blacklist — track for D45 lead-lag only, never D44 carry"
+    venues:
+      - venue: polymarket
+        market_id: "rus-ukr-ceasefire-2026"
+        side: direct
+      - venue: manifold
+        market_id: "russia-ukraine-ceasefire-2026"
+        side: direct
+
+  - slug: china-recession-2026
+    title: China official recession in 2026
+    category: macro
+    description: |
+      China NBS-reported GDP showing 2 consecutive quarters of negative growth.
+    resolution_criterion: National Bureau of Statistics China official GDP release
+    resolution_source: China NBS
+    expected_resolves_at: 2026-12-31T23:59:59Z
+    venues:
+      - venue: polymarket
+        market_id: "china-recession-2026"
+        side: direct
+      - venue: kalshi
+        market_id: "CHINA-RECESSION-2026"
+        side: direct
+
+  - slug: eurozone-rate-cut-q2-2026
+    title: ECB cuts rates in Q2 2026
+    category: economics
+    description: ECB lowers deposit facility rate в any meeting Apr-Jun 2026.
+    resolution_criterion: ECB official deposit facility rate decrease
+    resolution_source: ECB press releases
+    expected_resolves_at: 2026-06-30T23:59:59Z
+    venues:
+      - venue: polymarket
+        market_id: "ecb-q2-2026"
+        side: direct
+      - venue: kalshi
+        market_id: "ECB-Q2-2026"
+        side: direct
+
+  # ─── ENTERTAINMENT / CULTURE ───────────────────────────────────────
+  - slug: oscars-2026-best-picture
+    title: Oscars 2026 Best Picture winner
+    category: sports
+    description: |
+      Academy Awards 2026 Best Picture winner. Note: categorized 'sports'
+      потому что PDF §7.1 говорит Oscars paired Polymarket↔Betfair.
+    resolution_criterion: announced winner at ceremony
+    resolution_source: AMPAS official broadcast
+    expected_resolves_at: 2026-03-15T23:59:59Z
+    venues:
+      - venue: polymarket
+        market_id: "oscars-2026-best-pic"
+        side: direct
+      - venue: betfair
+        market_id: "OSCARS-2026"
+        side: direct
+      - venue: manifold
+        market_id: "oscars-2026"
+        side: direct
+
+  - slug: eurovision-2026-winner
+    title: Eurovision 2026 winner
+    category: sports
+    description: Eurovision Song Contest 2026 winning country.
+    resolution_criterion: announced winning country
+    resolution_source: EBU broadcast
+    expected_resolves_at: 2026-05-23T23:59:59Z
+    venues:
+      - venue: polymarket
+        market_id: "eurovision-2026"
+        side: direct
+      - venue: betfair
+        market_id: "EUROVISION-2026"
+        side: direct
+
+  # ─── TECH / AI ─────────────────────────────────────────────────────
+  - slug: gpt5-released-2026
+    title: OpenAI releases GPT-5 in 2026
+    category: macro
+    description: |
+      OpenAI публично releases модель officially named "GPT-5" до 2026-12-31.
+    resolution_criterion: OpenAI official announcement + public access
+    resolution_source: OpenAI press release
+    expected_resolves_at: 2026-12-31T23:59:59Z
+    venues:
+      - venue: polymarket
+        market_id: "gpt5-2026"
+        side: direct
+      - venue: manifold
+        market_id: "gpt5-2026"
+        side: direct
+
+  - slug: anthropic-ipo-2026
+    title: Anthropic IPO in 2026
+    category: macro
+    description: Anthropic files S-1 + IPOs до 2026-12-31.
+    resolution_criterion: official IPO via S-1 filing + trading
+    resolution_source: SEC EDGAR
+    expected_resolves_at: 2026-12-31T23:59:59Z
+    venues:
+      - venue: polymarket
+        market_id: "anthropic-ipo-2026"
+        side: direct
+      - venue: manifold
+        market_id: "anthropic-ipo-2026"
+        side: direct

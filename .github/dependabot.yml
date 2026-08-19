@@ -1,0 +1,87 @@
+# Dependabot version updates.
+#
+# СОСТОЯНИЕ 2026-08-05: автообновления ЗАГЛУШЕНЫ ЦЕЛИКОМ (решение владельца).
+#
+# Почему. 11 PR провисели без разбора: десять с 15 июня, один с 3 августа —
+# и были закрыты как неактуальные (#590, #592-600, #744). Поток, который никто
+# не разбирает, не защищает, а создаёт шум и ложное чувство свежести зависимостей.
+# Мержить major-бампы (pandas 2→3, protobuf 6→7, rich 14→15) в боевую торговую
+# систему пачкой нельзя, а разбирать по одному раз в неделю — некому.
+#
+# ⚠️ ЦЕНА РЕШЕНИЯ: `ignore` глушит и SECURITY-обновления по этим пакетам.
+# Алерты во вкладке Security репозитория остаются и работают — но PR по ним
+# dependabot больше не откроет. Обновление уязвимой зависимости = ручная работа.
+#
+# Как вернуть поток: удалить блок `- dependency-name: "*"` из нужной секции.
+# Конфигурация под ним сохранена рабочей (группы, расписание, лимиты) —
+# достаточно снять заглушку, менять больше ничего не нужно.
+#
+# История: сгенерировано под фактические пути этого репо, applied 2026-05-30.
+
+version: 2
+
+updates:
+  - package-ecosystem: pip
+    directory: /
+    schedule: { interval: weekly, day: monday, time: "09:00" }
+    open-pull-requests-limit: 10
+    groups:
+      python-minor-patch:
+        update-types: [minor, patch]
+    ignore:
+      # ЗАГЛУШКА 2026-08-05: весь поток pip-обновлений, включая minor/patch.
+      # Снять эту запись, чтобы вернуть еженедельную группу python-minor-patch.
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+      # cachetools запинен <7.0 транзитивно через pyiceberg==0.11.0
+      # (core-зависимость, не extra). Бамп до 7.x ломает резолюцию uv pip install.
+      # Снять, когда pyiceberg будет поднят/убран. См. закрытый PR #539.
+      # Оставлено отдельной записью: переживёт снятие общей заглушки выше.
+      - dependency-name: "cachetools"
+        update-types: ["version-update:semver-major"]
+    commit-message:
+      prefix: "chore(deps)"
+      include: scope
+
+  - package-ecosystem: docker
+    directory: /
+    schedule: { interval: weekly, day: monday, time: "09:00" }
+    open-pull-requests-limit: 5
+    ignore:
+      # ЗАГЛУШКА 2026-08-05: весь поток обновлений базового образа.
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+      # Python major-бамп рантайма — только осознанной задачей (синхронно
+      # Dockerfile + requires-python + ruff target + CI), не автоматически.
+      # C-ext зависимости (asyncpg/numpy/ckzg/grpcio…) могут не иметь cp3XX-колёс.
+      # См. закрытый PR #536 (3.11→3.14).
+      # Оставлено отдельной записью: переживёт снятие общей заглушки выше.
+      - dependency-name: "python"
+        update-types: ["version-update:semver-major"]
+    commit-message:
+      prefix: "chore(deps)"
+      include: scope
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly, day: monday, time: "09:00" }
+    open-pull-requests-limit: 5
+    groups:
+      actions:
+        patterns: ["*"]
+    ignore:
+      # ЗАГЛУШКА 2026-08-05: весь поток обновлений actions (был PR #590).
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+    commit-message:
+      prefix: "chore(deps)"
+      include: scope

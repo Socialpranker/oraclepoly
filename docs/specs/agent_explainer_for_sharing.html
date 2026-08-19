@@ -1,0 +1,398 @@
+<meta charset="utf-8">
+<title>Помощник-аналитик для торгового бота — как он работает</title>
+<style>
+  :root {
+    --ink: #1c1a17;
+    --ink-soft: #4a453f;
+    --paper: #f6f1e8;
+    --paper-raised: #efe8da;
+    --rule: #d9cfba;
+    --navy: #1f3a52;
+    --navy-soft: #345273;
+    --rust: #a8471f;
+    --rust-soft: #c2653a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #ece6da;
+      --ink-soft: #b8b0a0;
+      --paper: #17140f;
+      --paper-raised: #211d16;
+      --rule: #3a3529;
+      --navy: #8fb3d1;
+      --navy-soft: #6f96b8;
+      --rust: #e08a5a;
+      --rust-soft: #cf7648;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #ece6da; --ink-soft: #b8b0a0; --paper: #17140f; --paper-raised: #211d16;
+    --rule: #3a3529; --navy: #8fb3d1; --navy-soft: #6f96b8; --rust: #e08a5a; --rust-soft: #cf7648;
+  }
+  :root[data-theme="light"] {
+    --ink: #1c1a17; --ink-soft: #4a453f; --paper: #f6f1e8; --paper-raised: #efe8da;
+    --rule: #d9cfba; --navy: #1f3a52; --navy-soft: #345273; --rust: #a8471f; --rust-soft: #c2653a;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    font-size: 17px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 780px; margin: 0 auto; padding: 0 24px 96px; }
+
+  /* ---------- masthead ---------- */
+  .masthead {
+    border-bottom: 3px solid var(--ink);
+    padding: 28px 0 18px;
+    margin-bottom: 8px;
+  }
+  .masthead-top {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-family: "Courier New", ui-monospace, monospace;
+    font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .masthead h1 {
+    font-family: Georgia, "Times New Roman", serif;
+    font-weight: 400;
+    font-style: italic;
+    font-size: clamp(2.4rem, 7vw, 3.6rem);
+    letter-spacing: -0.01em;
+    margin: 10px 0 2px;
+    line-height: 1.05;
+  }
+  .masthead .dek {
+    font-family: "Courier New", ui-monospace, monospace;
+    font-size: 13px;
+    color: var(--ink-soft);
+    letter-spacing: 0.03em;
+  }
+
+  /* ---------- section rhythm ---------- */
+  section { padding: 44px 0; border-bottom: 1px solid var(--rule); }
+  section:last-of-type { border-bottom: none; }
+
+  .kicker {
+    font-family: "Courier New", ui-monospace, monospace;
+    font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--rust);
+    margin-bottom: 6px;
+  }
+  h2 {
+    font-family: Georgia, "Times New Roman", serif;
+    font-weight: 400;
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    margin: 0 0 20px;
+    line-height: 1.2;
+  }
+  h3 {
+    font-family: Georgia, serif;
+    font-weight: 700;
+    font-size: 1.05rem;
+    margin: 0 0 8px;
+    color: var(--navy);
+  }
+
+  p { margin: 0 0 18px; max-width: 68ch; }
+  p:last-child { margin-bottom: 0; }
+
+  strong { font-weight: 700; }
+  em { font-style: italic; }
+
+  /* ---------- lede with drop cap ---------- */
+  .lede { font-size: 1.14rem; line-height: 1.68; }
+  .lede::first-letter {
+    font-family: Georgia, serif;
+    font-style: italic;
+    font-size: 4.4em;
+    float: left;
+    line-height: 0.82;
+    padding: 0.02em 0.14em 0 0.02em;
+    margin-right: 0.02em;
+    color: var(--rust);
+  }
+
+  /* ---------- two-track split ---------- */
+  .tracks {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 28px;
+    margin-top: 8px;
+  }
+  @media (min-width: 620px) {
+    .tracks { grid-template-columns: 1.1fr 0.9fr; gap: 40px; }
+  }
+  .track-label {
+    font-family: "Courier New", ui-monospace, monospace;
+    font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .track--slow .track-label { color: var(--navy); }
+  .track--fast .track-label { color: var(--rust); }
+  .track p { font-size: 0.97rem; }
+
+  /* ---------- numbered flow ---------- */
+  .flow { counter-reset: step; margin-top: 24px; }
+  .flow-step {
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    gap: 16px;
+    padding: 16px 0;
+    border-top: 1px solid var(--rule);
+  }
+  .flow-step:first-child { border-top: none; padding-top: 0; }
+  .flow-num {
+    counter-increment: step;
+    font-family: Georgia, serif;
+    font-style: italic;
+    font-size: 1.6rem;
+    color: var(--rule);
+    line-height: 1;
+  }
+  .flow-num::before { content: counter(step); }
+  .flow-body h4 {
+    font-family: Georgia, serif; font-weight: 700; font-size: 0.98rem;
+    margin: 0 0 4px; color: var(--ink);
+  }
+  .flow-body p { font-size: 0.95rem; margin-bottom: 0; }
+
+  /* ---------- pull quote ---------- */
+  blockquote {
+    margin: 32px 0;
+    padding: 4px 0 4px 28px;
+    border-left: 3px solid var(--rust);
+    font-family: Georgia, serif;
+    font-style: italic;
+    font-size: 1.28rem;
+    line-height: 1.45;
+    color: var(--navy);
+    max-width: 56ch;
+  }
+  blockquote cite {
+    display: block;
+    font-family: "Courier New", ui-monospace, monospace;
+    font-style: normal;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-top: 10px;
+  }
+
+  /* ---------- message sample card ---------- */
+  .sample {
+    background: var(--paper-raised);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 20px 22px;
+    margin: 22px 0;
+    max-width: 480px;
+  }
+  .sample-head {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 0.88rem; color: var(--ink-soft);
+    margin-bottom: 10px;
+    font-family: "Courier New", ui-monospace, monospace;
+  }
+  .sample-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--rust); flex-shrink: 0; }
+  .sample-body { font-size: 0.94rem; line-height: 1.55; }
+  .sample-body strong { color: var(--navy); }
+  .sample-foot {
+    margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--rule);
+    font-size: 0.82rem; color: var(--ink-soft); font-style: italic;
+  }
+
+  /* ---------- limits list ---------- */
+  .limits { margin-top: 20px; }
+  .limit-item {
+    display: grid; grid-template-columns: 20px 1fr; gap: 12px;
+    padding: 12px 0; border-top: 1px solid var(--rule);
+  }
+  .limit-item:first-child { border-top: none; padding-top: 0; }
+  .limit-mark { color: var(--rust); font-family: Georgia, serif; font-style: italic; font-size: 1.1rem; line-height: 1.4; }
+  .limit-item p { font-size: 0.96rem; margin-bottom: 0; }
+
+  /* ---------- cost table ---------- */
+  .cost-table { margin-top: 20px; width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+  .cost-table th {
+    text-align: left; font-family: "Courier New", ui-monospace, monospace;
+    font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 400;
+    padding: 0 12px 10px 0; border-bottom: 1px solid var(--ink);
+  }
+  .cost-table td { padding: 12px 12px 12px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  .cost-table tr:last-child td { border-bottom: none; }
+  .cost-table .num { font-family: "Courier New", ui-monospace, monospace; white-space: nowrap; color: var(--navy); }
+  .cost-table .total-row td { border-top: 2px solid var(--ink); border-bottom: none; padding-top: 14px; font-weight: 700; }
+  .cost-table .total-row .num { color: var(--rust); font-weight: 700; }
+
+  /* ---------- footer ---------- */
+  footer {
+    margin-top: 12px; padding: 32px 0 0;
+    font-family: "Courier New", ui-monospace, monospace;
+    font-size: 11.5px; letter-spacing: 0.02em;
+    color: var(--ink-soft);
+    line-height: 1.7;
+  }
+  footer .rule { border: none; border-top: 1px solid var(--rule); margin: 0 0 20px; }
+
+  @media (max-width: 480px) {
+    body { font-size: 16px; }
+    .wrap { padding: 0 18px 72px; }
+    .flow-step { grid-template-columns: 32px 1fr; gap: 12px; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="masthead-top">
+      <span>Внутренняя записка · 20 июля 2026</span>
+      <span>Черновик для обсуждения</span>
+    </div>
+    <h1>Помощник-аналитик</h1>
+    <div class="dek">Что это такое, что он умеет и где заканчиваются его полномочия</div>
+  </header>
+
+  <section>
+    <p class="lede">У нас работает торговый бот, который сам находит и исполняет ставки на биржах прогнозов. Он неплохо справляется с самой торговлей — но никто в системе не следит за тем, устарели ли выводы, из которых бот исходит, не теряются ли деньги на «мелочах» вроде проскальзывания цены, и стоит ли вообще начать смотреть в новую сторону. Это и есть работа помощника-аналитика: не торговать самому, а следить за качеством решений и вовремя об этом сообщать.</p>
+  </section>
+
+  <section>
+    <div class="kicker">Главный принцип</div>
+    <h2>Он никогда не двигает деньги сам</h2>
+    <p>Это правило номер один, и оно не подлежит обсуждению ни на каком этапе. Помощник читает данные, считает, находит проблемы и предлагает — но у него физически нет ключей от биржи, нет доступа к торговым командам, и он не может ни разместить ставку, ни изменить размер существующей позиции.</p>
+    <p>Любое действие, которое стоит денег или меняет риск, проходит через человека. Помощник может подготовить предложение с расчётами и прислать его с кнопками — но нажать кнопку должен владелец. Технически это устроено так, что даже если бы кто-то захотел это обойти, обойти нельзя: доступ к торговым системам у помощника отсутствует на уровне инфраструктуры, а не на уровне договорённости.</p>
+  </section>
+
+  <section>
+    <div class="kicker">Что он проверяет</div>
+    <h2>Три вещи, которые он держит в поле зрения</h2>
+
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-num"></div>
+        <div class="flow-body">
+          <h4>Не устарело ли то, во что мы верим</h4>
+          <p>Каждый важный вывод — «этот способ торговли работает», «этот риск управляем», «эти цифры значат вот это» — имеет срок годности. Помощник следит, чтобы устаревшие выводы не продолжали молча управлять решениями, и предупреждает, когда что-то пора перепроверить.</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num"></div>
+        <div class="flow-body">
+          <h4>Не утекают ли деньги на исполнении</h4>
+          <p>Бот может угадывать направление правильно и всё равно терять деньги — например, если ставка исполняется по худшей цене, чем ожидалось, или комиссии съедают прибыль незаметно. Помощник регулярно прогоняет расчёты именно по этой части: где именно и сколько теряется на механике исполнения, а не на самом прогнозе.</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num"></div>
+        <div class="flow-body">
+          <h4>Стоит ли вообще начать смотреть в новую сторону</h4>
+          <p>Отдельная и самая осторожная часть — предлагать направления, в которых пока никто не задавал вопросов: новую площадку, новый тип риска, новый класс закономерностей. Об этом — дальше отдельно, потому что здесь риск ошибиться выше всего.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="kicker">Как он работает изнутри</div>
+    <h2>Сначала расчёт — потом объяснение</h2>
+    <p>Важная деталь устройства: помощник не «думает» о каждой мелочи языковой моделью. Числа считает обычный код — тот же класс расчётов, что уже есть в системе, только регулярно и по расписанию. Языковая модель подключается только в конце: когда есть готовый результат и его нужно объяснить человеческим языком.</p>
+    <p>Это не техническая деталь для галочки — это то, что делает его предсказуемым. Языковая модель никогда не решает сама, стоит ли будить владельца среди ночи, и никогда не может «подправить» цифры, которые видит человек: цифры зафиксированы до того, как модель вообще начинает писать текст.</p>
+
+    <blockquote>
+      Модель объясняет уже принятое решение — она не принимает его.
+      <cite>Из проектной документации</cite>
+    </blockquote>
+  </section>
+
+  <section>
+    <div class="kicker">Пример из жизни</div>
+    <h2>Как выглядит обычное сообщение</h2>
+    <p>Помощник пишет в мессенджер по расписанию — ничего не нужно у него спрашивать. Вот как мог бы выглядеть один из типов сообщений на реальных цифрах:</p>
+
+    <div class="sample">
+      <div class="sample-head">
+        <span class="sample-dot"></span>
+        <span>Сообщение · нужно решение до 21:00</span>
+      </div>
+      <div class="sample-body">
+        <strong>Снизить размер одной из ставок вдвое?</strong><br><br>
+        За две недели одна из торговых стратегий в минусе на $61 при 34 сделках. Направление она угадывает верно, но каждая сделка теряет около 11% на плохой цене исполнения — заходит в момент, когда на бирже мало желающих торговать по этой цене.<br><br>
+        Если снизить ставку — экономия около $15 в неделю на потерях, но и меньше заработаем, если проблему всё-таки исправят раньше. Если не трогать — продолжаем терять около $30 в неделю.
+      </div>
+      <div class="sample-foot">Кнопки: «Снизить ставку» / «Оставить как есть» / «Показать расчёт целиком»</div>
+    </div>
+
+    <p>Обратите внимание на структуру: сначала понятно, что случилось и что нужно решить, потом — что будет, если ничего не делать, и только потом — кнопки. Ни одно сообщение не приходит без объяснения «зачем».</p>
+  </section>
+
+  <section>
+    <div class="kicker">Самая осторожная часть</div>
+    <h2>Как он ищет новые направления</h2>
+    <div class="lede" style="font-size: 1rem;">
+      <p>Здесь риск ошибиться у языковой модели выше всего — потому что нет готовых цифр, которые можно проверить, есть только предположение «сюда стоит посмотреть». Поэтому это устроено умышленно медленно и в два слоя.</p>
+    </div>
+
+    <div class="tracks">
+      <div class="track track--slow">
+        <div class="track-label">Раз в неделю — полная проверка</div>
+        <p>Помощник смотрит на всё, что система уже знает и чего не знает — какие идеи проверены, какие нет, — и сверяет это со свежими новостями и публичной информацией снаружи. Из этого рождается предложение «вот сюда стоит начать смотреть». Оно всегда слабее по уверенности, чем обычные торговые расчёты, и прямо помечено как таковое.</p>
+      </div>
+      <div class="track track--fast">
+        <div class="track-label">Каждые 3 дня — короткая сверка</div>
+        <p>Дешёвая проверка «не появилось ли чего-то нового» между полными проверками. В подавляющем большинстве случаев ничего не находит и молчит — она нужна только для того, чтобы копить материал к недельной проверке, а не заваливать владельца сообщениями.</p>
+      </div>
+    </div>
+
+    <p style="margin-top: 26px;">Такое предложение никогда не превращается в торговую задачу напрямую. Единственный путь дальше — владелец соглашается «да, стоит проверить», и только после этого оно попадает в обычный процесс проверки гипотез — тот же самый, что и для любой другой идеи в системе, ничем не привилегированный.</p>
+  </section>
+
+  <section>
+    <div class="kicker">Границы</div>
+    <h2>Чего он не делает никогда</h2>
+
+    <div class="limits">
+      <div class="limit-item"><div class="limit-mark">—</div><p>Не размещает и не отменяет ставки, не переводит и не выводит деньги — ни при каких обстоятельствах и ни по какому одобрению.</p></div>
+      <div class="limit-item"><div class="limit-mark">—</div><p>Не решает сам, что «на этот раз можно» — правила, что разрешено предлагать, а что нет, зафиксированы заранее и не меняются на лету текстовым запросом.</p></div>
+      <div class="limit-item"><div class="limit-mark">—</div><p>Не даёт персональных финансовых советов в юридическом смысле — это инструмент учёта и поддержки решения, не консультант.</p></div>
+      <div class="limit-item"><div class="limit-mark">—</div><p>Не действует, если данные выглядят подозрительно — в такой момент он честно говорит «сейчас не доверяю своим же расчётам» вместо того, чтобы предложить решение на сомнительных цифрах.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="kicker">Что это стоит</div>
+    <h2>Сколько стоит его содержание</h2>
+    <p>Основная статья расходов — обращения к языковым моделям; дополнительная инфраструктура почти не нужна, потому что помощник работает поверх уже существующих серверов бота.</p>
+
+    <table class="cost-table">
+      <thead>
+        <tr><th>Что делает</th><th>Примерно в месяц</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Еженедельные расчёты и рекомендации</td><td class="num">$3–4</td></tr>
+        <tr><td>Ежедневные и еженедельные сводки</td><td class="num">$1–1.5</td></tr>
+        <tr><td>Короткие сверки «не появилось ли нового» (раз в 3 дня)</td><td class="num">$1–1.5</td></tr>
+        <tr><td>Полный еженедельный поиск новых направлений</td><td class="num">$8–13</td></tr>
+        <tr><td>Проверка качества собственных выводов</td><td class="num">&lt;$1</td></tr>
+        <tr class="total-row"><td>Итого</td><td class="num">≈ $15–24</td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top: 18px; font-size: 0.92rem; color: var(--ink-soft);">Больше половины этой суммы уходит именно на поиск новых направлений — потому что это единственная часть системы, которой разрешено обращаться к открытому интернету, а не только к внутренним данным.</p>
+  </section>
+
+  <footer>
+    <hr class="rule">
+    Документ подготовлен как объяснение для стороннего читателя. Технические детали, схемы данных и полная спецификация — в проектной документации.
+  </footer>
+
+</div>

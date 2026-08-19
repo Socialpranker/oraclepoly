@@ -1,0 +1,728 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+/* ==========================================
+   EDITORIAL SCOPE — /bot Live Terminal
+   Опциональный scope с serif display + data mono.
+   Не влияет на dry-режим и старые страницы.
+   ========================================== */
+.editorial {
+  --ed-bg: #0a0a0b;
+  --ed-bg-raised: #131316;
+  --ed-ink: #e7e5e0;
+  --ed-ink-dim: #8a8680;
+  --ed-ink-faint: #555250;
+  --ed-rule: rgba(233, 229, 220, 0.08);
+  --ed-rule-strong: rgba(233, 229, 220, 0.18);
+  --ed-accent: #c9a961;         /* goldenrod */
+  --ed-accent-soft: rgba(201, 169, 97, 0.12);
+  --ed-up: #5fb97a;             /* muted green */
+  --ed-up-soft: rgba(95, 185, 122, 0.12);
+  --ed-down: #d65a5a;           /* muted red */
+  --ed-down-soft: rgba(214, 90, 90, 0.12);
+  --ed-paused: #b4876a;
+
+  --ed-display: 'Fraunces', 'Times New Roman', serif;
+  --ed-body: 'Manrope', 'Inter', system-ui, sans-serif;
+  --ed-mono: 'JetBrains Mono', monospace;
+}
+
+.editorial .ed-display {
+  font-family: var(--ed-display);
+  font-optical-sizing: auto;
+  font-variation-settings: "opsz" 144, "SOFT" 0, "WONK" 0;
+  letter-spacing: -0.02em;
+}
+
+.editorial .ed-mono {
+  font-family: var(--ed-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+.editorial .ed-body {
+  font-family: var(--ed-body);
+}
+
+.editorial .ed-kicker {
+  font-family: var(--ed-body);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ed-ink-dim);
+  font-weight: 600;
+}
+
+.editorial .ed-rule {
+  height: 1px;
+  background: var(--ed-rule);
+  border: 0;
+}
+
+.editorial .ed-rule-strong {
+  height: 1px;
+  background: var(--ed-rule-strong);
+  border: 0;
+}
+
+.editorial .ed-grain {
+  position: relative;
+}
+
+.editorial .ed-grain::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.04;
+  mix-blend-mode: overlay;
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(233, 229, 220, 0.9) 0.5px, transparent 0.5px),
+    radial-gradient(circle at 3px 5px, rgba(233, 229, 220, 0.6) 0.5px, transparent 0.5px);
+  background-size: 4px 4px, 6px 6px;
+}
+
+/* Gold accent pulse — для LIVE dot */
+@keyframes ed-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(201, 169, 97, 0.55); }
+  50% { box-shadow: 0 0 0 6px rgba(201, 169, 97, 0); }
+}
+.editorial .ed-pulse {
+  animation: ed-pulse 1.8s ease-out infinite;
+}
+
+/* Staggered entrance — slow & serif-feel */
+@keyframes ed-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.editorial .ed-rise > * {
+  opacity: 0;
+  animation: ed-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.editorial .ed-rise > *:nth-child(1) { animation-delay: 60ms; }
+.editorial .ed-rise > *:nth-child(2) { animation-delay: 140ms; }
+.editorial .ed-rise > *:nth-child(3) { animation-delay: 220ms; }
+.editorial .ed-rise > *:nth-child(4) { animation-delay: 300ms; }
+.editorial .ed-rise > *:nth-child(5) { animation-delay: 380ms; }
+.editorial .ed-rise > *:nth-child(6) { animation-delay: 460ms; }
+.editorial .ed-rise > *:nth-child(n+7) { animation-delay: 540ms; }
+
+/* Ticker tape — бесконечно скроллящаяся лента */
+@keyframes ed-ticker {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.editorial .ed-ticker-track {
+  display: inline-flex;
+  gap: 2.5rem;
+  animation: ed-ticker 60s linear infinite;
+  will-change: transform;
+}
+.editorial .ed-ticker-viewport:hover .ed-ticker-track {
+  animation-play-state: paused;
+}
+
+/* Drop cap — оперного типа выделение первого символа */
+.editorial .ed-drop-cap::first-letter {
+  font-family: var(--ed-display);
+  float: left;
+  font-size: 3em;
+  line-height: 0.85;
+  padding-right: 0.08em;
+  padding-top: 0.06em;
+  font-weight: 500;
+  color: var(--ed-accent);
+  font-style: italic;
+}
+
+/* Chip — малая pill-форма для meta */
+.editorial .ed-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-family: var(--ed-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--ed-rule-strong);
+  color: var(--ed-ink-dim);
+}
+.editorial .ed-chip[data-tone="up"] {
+  color: var(--ed-up);
+  border-color: rgba(95, 185, 122, 0.35);
+  background: var(--ed-up-soft);
+}
+.editorial .ed-chip[data-tone="down"] {
+  color: var(--ed-down);
+  border-color: rgba(214, 90, 90, 0.35);
+  background: var(--ed-down-soft);
+}
+.editorial .ed-chip[data-tone="gold"] {
+  color: var(--ed-accent);
+  border-color: rgba(201, 169, 97, 0.35);
+  background: var(--ed-accent-soft);
+}
+
+/* Vertical pull-quote — эпиграф сбоку */
+.editorial .ed-pull {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-family: var(--ed-display);
+  font-style: italic;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--ed-ink-faint);
+  text-transform: lowercase;
+}
+
+/* Accordion — CSS-only collapse (замена AnimatePresence для /bot карточек) */
+@keyframes ed-expand {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.editorial .ed-expand {
+  overflow: hidden;
+  animation: ed-expand 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Fade-up — разовая анимация для Hero без framer-motion */
+@keyframes ed-fade-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.editorial .ed-fade-up {
+  animation: ed-fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Skeleton bars — editorial paper-tone shimmer */
+@keyframes ed-skel-shimmer {
+  0% { background-position: -240px 0; }
+  100% { background-position: 240px 0; }
+}
+.editorial .ed-skeleton {
+  animation: ed-fade-up 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.editorial .ed-skel-bar {
+  display: inline-block;
+  background: linear-gradient(
+    90deg,
+    rgba(233, 229, 220, 0.045) 0%,
+    rgba(233, 229, 220, 0.11) 50%,
+    rgba(233, 229, 220, 0.045) 100%
+  );
+  background-size: 480px 100%;
+  animation: ed-skel-shimmer 1.4s linear infinite;
+  vertical-align: middle;
+}
+
+/* ==========================================
+   ORACLE POLY — DESIGN SYSTEM v2.0
+   Mood Mode — AI-Gradient Dark Theme
+   ========================================== */
+
+/* --- CSS Custom Properties --- */
+@theme {
+  /* Primary Colors — Mood Mode */
+  --color-bg-primary: #0B0D10;
+  --color-bg-secondary: #101318;
+  --color-bg-elevated: #151A21;
+
+  /* Semantic Colors — Mood Mode (неоновые) */
+  --color-safe: #00FF85;
+  --color-danger: #FF3B30;
+  --color-warning: #FF6A3D;
+  --color-info: #40E0FF;
+  --color-accent: #9E7AFF;
+
+  /* AI Gradient */
+  --gradient-ai-from: #9E7AFF;
+  --gradient-ai-to: #FE8BBB;
+
+  /* Border */
+  --color-border-default: #273140;
+
+  /* Glass Effect Colors — Mood Mode */
+  --color-glass-bg: rgba(21, 26, 33, 0.6);
+  --color-glass-border: rgba(39, 49, 64, 0.8);
+  --color-glass-hover: rgba(39, 49, 64, 1);
+
+  /* Text Colors — Mood Mode */
+  --color-text-primary: #E9EEF5;
+  --color-text-secondary: #B0B0B0;
+  --color-text-muted: #64748B;
+
+  /* Typography */
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Spacing (base: 4px) */
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-5: 20px;
+  --spacing-6: 24px;
+  --spacing-8: 32px;
+  --spacing-10: 40px;
+
+  /* Animations */
+  --animate-pulse-slow: pulse-slow 2s ease-in-out infinite;
+  --animate-glow-safe: glow-safe 2s ease-in-out infinite alternate;
+  --animate-glow-danger: glow-danger 2s ease-in-out infinite alternate;
+
+  /* Spacing Standards */
+  --card-padding-compact: 12px;
+  --card-padding-default: 16px;
+  --card-padding-hero: 24px;
+
+  /* Text Sizes */
+  --text-label: 12px;
+  --text-body: 14px;
+  --text-heading: 18px;
+
+  /* Stagger Animation */
+  --stagger-delay: 60ms;
+
+  /* Transitions */
+  --transition-fast: 150ms;
+  --transition-default: 200ms;
+  --transition-slow: 300ms;
+
+  /* Section Tint Colors — обновлены под Mood Mode */
+  --color-tint-whale: rgba(64, 224, 255, 0.05);
+  --color-tint-chaos: rgba(255, 59, 48, 0.08);
+  --color-tint-profile: rgba(158, 122, 255, 0.05);
+  --color-tint-leaderboard: rgba(255, 106, 61, 0.05);
+
+  --color-border-whale: rgba(64, 224, 255, 0.20);
+  --color-border-chaos: rgba(255, 59, 48, 0.30);
+  --color-border-profile: rgba(158, 122, 255, 0.20);
+  --color-border-leaderboard: rgba(255, 106, 61, 0.20);
+}
+
+/* --- Keyframe Animations --- */
+@keyframes pulse-slow {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes glow-safe {
+  0% {
+    box-shadow: 0 0 5px rgba(0, 255, 133, 0.3);
+  }
+
+  100% {
+    box-shadow: 0 0 20px rgba(0, 255, 133, 0.6), 0 0 40px rgba(0, 255, 133, 0.3);
+  }
+}
+
+@keyframes glow-danger {
+  0% {
+    box-shadow: 0 0 5px rgba(255, 59, 48, 0.3);
+  }
+
+  100% {
+    box-shadow: 0 0 20px rgba(255, 59, 48, 0.6), 0 0 40px rgba(255, 59, 48, 0.3);
+  }
+}
+
+@keyframes glow-warning {
+  0% {
+    box-shadow: 0 0 5px rgba(255, 106, 61, 0.3);
+  }
+
+  100% {
+    box-shadow: 0 0 20px rgba(255, 106, 61, 0.6), 0 0 40px rgba(255, 106, 61, 0.3);
+  }
+}
+
+@keyframes glow-accent {
+  0% {
+    box-shadow: 0 0 5px rgba(158, 122, 255, 0.3);
+  }
+
+  100% {
+    box-shadow: 0 0 20px rgba(158, 122, 255, 0.6), 0 0 40px rgba(158, 122, 255, 0.3);
+  }
+}
+
+/* Hot Market — high activity pulse */
+@keyframes border-glow-hot {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(158, 122, 255, 0.2), 0 0 4px rgba(64, 224, 255, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(158, 122, 255, 0.4), 0 0 8px rgba(0, 255, 133, 0.2);
+  }
+}
+
+.hot-market {
+  animation: border-glow-hot 2s ease-in-out infinite;
+  border-color: rgba(158, 122, 255, 0.3) !important;
+}
+
+/* --- Shimmer Animation for Skeletons --- */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg,
+      rgba(255, 255, 255, 0.03) 0%,
+      rgba(255, 255, 255, 0.08) 50%,
+      rgba(255, 255, 255, 0.03) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* --- Semantic Skeleton Pulse --- */
+@keyframes skeleton-semantic-pulse {
+  0%, 100% { border-color: var(--skeleton-color, #273140); opacity: 0.6; }
+  50% { border-color: var(--skeleton-color, #273140); opacity: 1; }
+}
+
+/* --- Staggered List Animation --- */
+@keyframes fadeInSlide {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-stagger>* {
+  animation: fadeInSlide 0.2s ease-out forwards;
+  opacity: 0;
+}
+
+.animate-stagger>*:nth-child(1) {
+  animation-delay: 0ms;
+}
+
+.animate-stagger>*:nth-child(2) {
+  animation-delay: 60ms;
+}
+
+.animate-stagger>*:nth-child(3) {
+  animation-delay: 120ms;
+}
+
+.animate-stagger>*:nth-child(4) {
+  animation-delay: 180ms;
+}
+
+.animate-stagger>*:nth-child(5) {
+  animation-delay: 240ms;
+}
+
+.animate-stagger>*:nth-child(6) {
+  animation-delay: 300ms;
+}
+
+.animate-stagger>*:nth-child(7) {
+  animation-delay: 360ms;
+}
+
+.animate-stagger>*:nth-child(8) {
+  animation-delay: 420ms;
+}
+
+.animate-stagger>*:nth-child(n+9) {
+  animation-delay: 480ms;
+}
+
+/* --- Number Typography (Tabular) --- */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* --- Base Styles --- */
+html {
+  font-family: var(--font-sans);
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+#root {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* --- Typography Utilities --- */
+.font-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Glass Card Base --- */
+.glass-card {
+  background: var(--color-glass-bg);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--color-glass-border);
+  border-radius: 16px;
+  transition: all 200ms ease;
+}
+
+.glass-card:hover {
+  background: var(--color-glass-hover);
+  border-color: rgba(39, 49, 64, 1);
+}
+
+/* --- Safe Area (iOS) --- */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* --- Scrollbar Styling --- */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-glass-border);
+  border-radius: 2px;
+}
+
+/* --- Reduced Motion --- */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ==========================================
+   MOBILE / TMA OPTIMIZATIONS
+   ========================================== */
+
+/* Hide horizontal scrollbar */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Mobile-first grid */
+@media (max-width: 768px) {
+  .grid-cols-1 {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Reduce spacing on mobile */
+  .p-4 {
+    padding: 12px !important;
+  }
+
+  /* Make cards more compact */
+  .glass-card {
+    border-radius: 12px;
+  }
+
+  /* Larger touch targets */
+  button,
+  a,
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Telegram Mini App specific */
+html.tma {
+  /* Use TMA viewport */
+  height: var(--tg-viewport-height, 100vh);
+  overflow: hidden;
+  touch-action: manipulation;
+}
+
+html.tma body {
+  height: var(--tg-viewport-height, 100vh);
+  overflow-y: auto;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* TMA Safe Areas */
+.tma-safe-top {
+  padding-top: var(--tg-content-safe-area-inset-top, 0);
+}
+
+.tma-safe-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom), 16px);
+}
+
+/* Touch feedback */
+.active\\:scale-\\[0\\.98\\]:active {
+  transform: scale(0.98);
+}
+
+/* Prevent text selection on interactive elements */
+button,
+a,
+[role="button"] {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Smaller fonts on very small screens */
+@media (max-width: 375px) {
+  .text-4xl {
+    font-size: 28px !important;
+  }
+
+  .text-lg {
+    font-size: 15px !important;
+  }
+
+  .text-sm {
+    font-size: 13px !important;
+  }
+}
+
+/* Landscape mode fix */
+@media (max-height: 500px) and (orientation: landscape) {
+  .min-h-screen {
+    min-height: auto;
+  }
+}
+
+/* --- Analytics Range Slider (OracleSimulationTab) --- */
+.analytics-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.10);
+  outline: none;
+  cursor: pointer;
+}
+
+.analytics-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #9E7AFF;
+  box-shadow: 0 0 8px rgba(158, 122, 255, 0.4);
+  cursor: pointer;
+  transition: box-shadow 0.15s;
+}
+
+.analytics-range::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 12px rgba(158, 122, 255, 0.6);
+}
+
+.analytics-range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #9E7AFF;
+  box-shadow: 0 0 8px rgba(158, 122, 255, 0.4);
+  border: none;
+  cursor: pointer;
+}
+
+.analytics-range::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.10);
+}
+
+/* --- Range Slider with fill (WhaleCopyTab) --- */
+.range-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(
+    to right,
+    var(--accent, #9E7AFF) 0%,
+    var(--accent, #9E7AFF) var(--fill-pct, 0%),
+    rgba(255, 255, 255, 0.08) var(--fill-pct, 0%),
+    rgba(255, 255, 255, 0.08) 100%
+  );
+  outline: none;
+}
+
+.range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent, #9E7AFF);
+  border: 2px solid #0B0D10;
+  box-shadow: 0 0 6px rgba(158, 122, 255, 0.4);
+  cursor: pointer;
+}
+
+.range-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent, #9E7AFF);
+  border: 2px solid #0B0D10;
+  box-shadow: 0 0 6px rgba(158, 122, 255, 0.4);
+  cursor: pointer;
+}
+
+/* === Admin Analytics Mode Themes === */
+
+.analytics-work {
+  --mode-accent: #22c55e;
+  --mode-accent-dim: rgba(34, 197, 94, 0.15);
+  --mode-negative: #ef4444;
+  --mode-negative-dim: rgba(239, 68, 68, 0.15);
+  --mode-bg-subtle: rgba(34, 197, 94, 0.03);
+  --mode-border: rgba(34, 197, 94, 0.1);
+}
+
+.analytics-diagnostics {
+  --mode-accent: #60a5fa;
+  --mode-accent-dim: rgba(96, 165, 250, 0.15);
+  --mode-negative: #f59e0b;
+  --mode-negative-dim: rgba(245, 158, 11, 0.15);
+  --mode-bg-subtle: rgba(96, 165, 250, 0.03);
+  --mode-border: rgba(96, 165, 250, 0.1);
+}

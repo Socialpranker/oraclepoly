@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "graph-server",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8888", "--directory", "graphify-out"],
+      "port": 8888
+    },
+    {
+      "name": "frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "client"],
+      "port": 5173
+    }
+  ]
+}

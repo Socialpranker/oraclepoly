@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
+      - 'LICENSE'
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
+      - 'LICENSE'
+
+# Отменять устаревшие run при быстрых последовательных пушах — экономия Actions-минут
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (lint + test)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: uv pip install --system -r requirements.txt ruff
+
+      - name: Lint with ruff
+        run: ruff check app/
+
+      - name: Run tests
+        run: pytest tests/ -v --tb=short -n auto
+        env:
+          # Production validators (config.py) требуют 32+ chars для security keys.
+          # В CI используем фейковые валидные значения, чтобы валидация не блочила тесты.
+          OPENAI_API_KEY: fake-key-for-ci
+          DATABASE_URL: postgresql://test:test@localhost:5432/test
+          JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY_CI }}
+          ADMIN_API_KEY: ${{ secrets.ADMIN_API_KEY_CI }}
+
+  frontend:
+    name: Frontend (lint + build)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: client
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build

@@ -1,0 +1,112 @@
+# OraclePoly
+
+Торговый бот для prediction markets [Polymarket](https://polymarket.com): детекторы ищут расхождение цены и вероятности, ML-калибровка переводит уверенность детектора в честную вероятность, риск-движок считает размер ставки, execution-демон размещает ордер в CLOB. От сигнала до заполнения — без участия человека.
+
+![Python](https://img.shields.io/badge/python-3.11+-3776AB?logo=python&logoColor=white)
+![Tests](https://img.shields.io/badge/tests-4095%20passing-2E7D32)
+![License](https://img.shields.io/badge/license-MIT-555555)
+
+> [!WARNING]
+> **Это исследовательский код, а не финансовый продукт.** Бот размещает реальные ордера на реальные деньги.
+>
+> Никаких гарантий прибыльности нет. У большинства детекторов в этом репозитории отрицательный или недоказанный edge, а часть бэктестов не воспроизвелась в проде — это задокументировано в `docs/backtests/`, а не спрятано. Автоматическая торговля на prediction markets ограничена или запрещена в ряде юрисдикций; проверять это — ваша задача. Код распространяется «как есть», без гарантий (см. [LICENSE](LICENSE)).
+
+## Как это работает
+
+```mermaid
+flowchart LR
+    PM[("Polymarket API")] --> DET["Детекторы"]
+    DET --> SIG[("detector_signals")]
+    SIG --> ML["ML-калибровка"]
+    ML --> RISK["EV-сайзер и риск-гейты"]
+    RISK -->|"stage = live"| EXEC["Execution-демон"]
+    RISK -.->|"stage = shadow / virtual"| SHADOW["Запись без денег"]
+    EXEC --> PM
+    EXEC --> RES["Резолв и redeem"]
+    RES --> SIG
+
+    style RISK fill:#FFF3E0,stroke:#E65100,stroke-width:2px,color:#3E2723
+    style EXEC fill:#FFEBEE,stroke:#C62828,stroke-width:2px,color:#3E2723
+```
+
+Данные приходят из Gamma API, CLOB и WebSocket-стрима. Около двадцати детекторов ищут каждый свою неэффективность — копирование китов, календарные спреды, событийный дрейф, расхождение с Kalshi — и пишут сигнал в `detector_signals`. Beta-калибраторы и LightGBM переводят сырую уверенность детектора в вероятность, которой можно верить; EV-сайзер считает ставку по Келли, риск-гейты режут всё, что не проходит по exposure, просадке и свежести цены. Ордера уходят в CLOB как maker или taker, выигранные позиции редимятся, исход возвращается в базу и обучает калибраторы.
+
+Ключевая идея — **детектор не получает доступ к деньгам, пока не заслужит**. Каждый проходит четыре стадии, и переход между ними всегда ручной:
+
+| Стадия | Что происходит | Деньги |
+|---|---|---|
+| **Backtest** | гипотеза проверяется на исторических данных | $0 |
+| **Shadow** | детектор эмитит сигналы на живых данных, исход ждёт резолва | $0 |
+| **Virtual** | сигналы проходят весь пайплайн и «размещаются» виртуально | $0 |
+| **Live** | реальные ордера в CLOB | реальные |
+
+Стадия хранится в `detector_state.stage` и гасит доступ к деньгам независимо от того, работает ли эмиссия сигналов. Подробности и критерии промоута — [docs/detector_lifecycle.md](docs/detector_lifecycle.md).
+
+## Быстрый старт
+
+```bash
+git clone git@github.com:<your-user>/oraclepoly.git && cd oraclepoly
+cp .env.example .env          # заполнить DATABASE_URL, REDIS_URL, OPENAI_API_KEY, TELEGRAM_BOT_TOKEN
+docker compose up -d --build
+```
+
+Backend поднимется на `http://localhost:8001/docs` (Swagger), фронтенд — на `http://localhost:5173`.
+
+`EXECUTION_ENABLED=false` в `.env` по умолчанию: без него бот считает и пишет в базу, но не отправляет ордера. Не меняйте это значение, пока не прогнали свои детекторы через shadow и virtual.
+
+<details>
+<summary>Запуск без Docker</summary>
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+docker compose up -d postgres redis     # база и очередь всё же нужны
+./start.sh                              # backend :8001 + worker + frontend :5173
+```
+
+</details>
+
+## Проверка
+
+```bash
+pytest tests/ -v --tb=short
+ruff check app/ && cd client && npm run lint
+```
+
+## Структура
+
+```
+app/
+  detectors/    # детекторы, по файлу на гипотезу
+  calibration/  # Beta-калибраторы L1, EV-сайзер, Kelly
+  backtest/     # paired tick replay, Wilson CI
+  jobs/         # 89 cron-задач: сканы, execution, redeem, fit калибраторов
+  api/          # FastAPI endpoints
+  core/         # config, scoring, auth, cache
+  services/     # БД, Polymarket CLOB, WebSocket, Telegram
+client/src/     # React 19 + Vite + Tailwind 4 — админ-панель по стадиям
+migrations/     # SQL, timestamp-prefix, state-tracked
+docs/           # архитектура, деплой, runbooks, отчёты бэктестов
+```
+
+## Стек
+
+Python 3.11 · FastAPI · PostgreSQL 16 (asyncpg) · Redis · LightGBM · React 19 · Vite · Tailwind 4 · Docker
+
+## Документация
+
+- [Настройка окружения](docs/SETUP.md) · [Деплой](docs/DEPLOYMENT.md) · [Безопасность](docs/SECURITY.md)
+- [Detector Lifecycle](docs/detector_lifecycle.md) — источник правды по стадиям
+- [Архитектура](docs/architecture/) · [Backup & restore](docs/runbooks/backup_restore.md)
+- [Отчёты бэктестов](docs/backtests/) — включая те, где гипотеза не подтвердилась
+- [Как контрибьютить](CONTRIBUTING.md)
+
+## Чего здесь нет
+
+Внутренние материалы в публичную версию не вошли: каталог `research/` (deep-research по гипотезам), `docs/superpowers/` (планы и design-спеки), прод-runbook'и с инфраструктурными деталями. Комментарии в коде и заголовки миграций местами ссылаются на эти файлы — ссылки оставлены как след происхождения решения, самих файлов в репозитории нет.
+
+История коммитов начата с нуля при публикации: приватный репозиторий содержал прод-детали, которые проще было не переносить, чем вычищать из 2700 коммитов.
+
+## Лицензия
+
+MIT — см. [LICENSE](LICENSE).

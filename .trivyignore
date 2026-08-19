@@ -1,0 +1,32 @@
+# Trivy ignore list — see https://aquasecurity.github.io/trivy/latest/docs/configuration/filtering/
+# Each line = a single deliberately-ignored ID with a TODO and a reason. No wildcards.
+
+# DS-0002: Dockerfile запускает контейнер от root.
+# TODO(security-hardening): добавить USER appuser в Dockerfile репо.
+# Требует проверки на staging (volumes, права). Делать отдельным PR с rollback.
+DS-0002
+
+# GHSA-qwww-vcr4-c8h2: React Router RSC Mode CSRF Bypass (HIGH).
+# НЕ ЭКСПЛУАТИРУЕМО в этом проекте — VEX vulnerable_code_not_present.
+#
+# Обоснование (проверено 2026-07-27):
+#   1. Адвайзори явно ограничивает область: "This only affects your application
+#      if you are using the unstable RSC APIs".
+#   2. client/ — чистый client-side SPA на Vite: BrowserRouter + декларативные
+#      <Routes> (client/src/App.tsx). RSC-режим отсутствует полностью:
+#      нет react-router.config.*, нет @vitejs/plugin-rsc, нет импортов
+#      react-router/rsc, нет "use server" и *.server.* модулей,
+#      нет createBrowserRouter/RouterProvider/createStaticHandler.
+#   3. Уязвимый код лежит в RSC-путях (matchRSCServerRequest /
+#      routeRSCServerRequest) — они не импортируются и не попадают в бандл.
+#   4. Серверных экшенов у фронта нет вообще: весь I/O — REST-запросы к FastAPI.
+#
+# Апгрейд НЕВОЗМОЖЕН в рамках этого пакета: фикс заявлен в 8.3.0, но
+# react-router-dom в v8 НЕ ПУБЛИКОВАЛСЯ — npm dist-tag latest = 7.18.1
+# (в v8 проект схлопнулся в единый пакет react-router). То есть "апгрейд до
+# 8.3.0" = миграция на другой пакет + мажорный редизайн роутинга, а не bump.
+#
+# TODO(react-router-v8): снять этот ignore при миграции на пакет react-router v8+.
+# Пересмотреть, если во фронт когда-либо заедет RSC/framework mode — тогда
+# уязвимость становится боевой и ignore обязан быть удалён.
+GHSA-qwww-vcr4-c8h2

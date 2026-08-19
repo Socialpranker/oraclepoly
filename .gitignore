@@ -1,0 +1,106 @@
+# Oracle Data Lake
+
+*.pyc
+__pycache__/
+.env
+.mcp.json
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node / React
+node_modules/
+.DS_Store
+*.local
+.npm
+.eslintcache
+client/.env
+
+# Claude Code (local)
+.claude/CLAUDE.md
+
+# Project specific
+oracle_deploy.tar.gz
+logs/
+scripts/deploy_keys.sh
+scripts/deploy_remote.sh
+docs/KEYS_BACKUP.md
+.worktrees/
+research/oracle_resolved.csv
+research/oracle_resolved_dataset.csv
+research/data/*.parquet
+research/data/_meta.json
+research/*.csv
+# Deep research отчёты (markdown + JSON sources) — draft research, не trunk код
+research/event-driven-execution-polymarket/
+research/prediction-markets-signal-sources/
+
+# Claude Code worktrees (агенты создают эти директории, коммитить не нужно)
+.claude/worktrees/
+# Claude Code handoffs (содержат детали инфраструктуры, не для репо)
+.claude/handoffs/
+
+# Graphify артефакты (knowledge graph output)
+graphify-out/
+research/graphify-out/
+.graphify_python
+
+# Claude Code scheduled tasks lock (runtime artefact)
+.claude/scheduled_tasks.lock
+
+# Brainstorming skill runtime artefacts (visual companion server state)
+.superpowers/brainstorm/
+
+# HTML отчёты (research drafts, не документация)
+# docs/visualizer/** остаётся трекнутым (это rendered viz, не отчёт),
+# КРОМЕ package-lock.json — см. docs/visualizer/.gitignore (ложные Dependabot-алерты).
+docs/*.html
+
+# Security audits других проектов (не OraclePoly scope)
+audits/
+
+# Локальные research артефакты (не коммитить — большие + регенерируются)
+research/data/
+research/findings/
+
+# Локальные data dumps (прод snapshots, parquet, регенерируются через SSH)
+data/
+CLAUDE.local.md
+owner_ips.local.md
+
+# Deep research outputs (дублируют 06-desk-research/, регенерируются скиллом)
+outputs/
+
+# Старые one-off исследовательские скрипты (живут в scripts/research/ теперь)
+research/*.py
+research/__init__.py
+
+# Картинки (не проектный контент)
+img/
+
+# Архивные планы UI/B2C эпохи
+docs/plans/
+
+# Сессионные артефакты (audits, findings, economics — пересоздаются per session)
+products/
+
+# Deep research отчёты (канонические в research/, 06-desk-research/ — локальные drafts)
+06-desk-research/
+
+# Артефакт CI deploy job: SHA последнего успешного деплоя (только на проде)
+.deploy_sha
+
+# Артефакты скиллов Claude Code (регенерируются, не проектный контент)
+session-report-*.html
+ONBOARDING.md
+
+# Выполненные внутренние планы (не публикуются; правило: удалять после выполнения)
+docs/superpowers/plans/
+
+# Linter cache
+.ruff_cache/

@@ -1,0 +1,64 @@
+# Security scans: secrets + dependency CVE + container misconfig.
+# Stack-agnostic — scans the repository as-is.
+# Generated 2026-05-30, applied to all active private repos.
+name: Security
+
+on:
+  push:
+    branches-ignore:
+      - dependabot/**
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    name: gitleaks + trivy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write  # gitleaks-action комментирует PR с находками
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # gitleaks-action качает бинарь в os.tmpdir()/gitleaks.tmp (имя фиксированное) и
+      # НЕ удаляет старый файл. Если tmp персистентен между запусками → залипший
+      # файл от прерванного запуска валит «Destination file path .../gitleaks.tmp
+      # already exists» на КАЖДОМ следующем запуске. Сносим артефакты до экшена,
+      # в той же директории (TMPDIR=runner.temp), куда экшен будет писать ниже.
+      - name: Clean stale gitleaks tmp
+        run: rm -rf "${TMPDIR:-/tmp}/gitleaks.tmp" "${TMPDIR:-/tmp}"/gitleaks-*/ 2>/dev/null || true
+        env:
+          TMPDIR: ${{ runner.temp }}
+
+      - name: Gitleaks (secrets in git history)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # os.tmpdir() читает TMPDIR первым → уводим gitleaks.tmp из прод-/tmp в
+          # изолированный runner temp. runner.* доступен только в step-контексте.
+          TMPDIR: ${{ runner.temp }}
+
+      - name: Trivy (filesystem CVEs)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL,HIGH
+          exit-code: '1'
+          ignore-unfixed: true
+          skip-dirs: node_modules,frontend/node_modules,backend/node_modules,.venv,backend/.venv,dist,build,_archive
+
+      - name: Trivy (Dockerfile misconfig)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: config
+          scan-ref: .
+          severity: CRITICAL,HIGH
+          exit-code: '1'
+          skip-dirs: node_modules,frontend/node_modules,backend/node_modules,.venv,backend/.venv,dist,build,_archive
