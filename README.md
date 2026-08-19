@@ -1,129 +1,129 @@
 # OraclePoly
 
-Торговый бот для prediction markets [Polymarket](https://polymarket.com): детекторы ищут расхождение цены и вероятности, ML-калибровка переводит уверенность детектора в честную вероятность, риск-движок считает размер ставки, execution-демон размещает ордер в CLOB. От сигнала до заполнения — без участия человека.
+A trading bot for [Polymarket](https://polymarket.com) prediction markets: detectors look for a gap between price and probability, ML calibration turns a detector's raw confidence into an honest probability, a risk engine sizes the bet, and an execution daemon places the order in the CLOB. From signal to fill, no human in the loop.
 
 ![Python](https://img.shields.io/badge/python-3.11+-3776AB?logo=python&logoColor=white)
 ![Tests](https://img.shields.io/badge/tests-4095%20passing-2E7D32)
 ![License](https://img.shields.io/badge/license-MIT-555555)
 
 > [!WARNING]
-> **Это исследовательский код, а не финансовый продукт.** Бот размещает реальные ордера на реальные деньги.
+> **This is research code, not a financial product.** The bot places real orders with real money.
 >
-> Никаких гарантий прибыльности нет. У большинства детекторов в этом репозитории отрицательный или недоказанный edge, а часть бэктестов не воспроизвелась в проде — это задокументировано в `docs/backtests/`, а не спрятано. Автоматическая торговля на prediction markets ограничена или запрещена в ряде юрисдикций; проверять это — ваша задача. Код распространяется «как есть», без гарантий (см. [LICENSE](LICENSE)).
+> There is no guarantee of profitability. Most detectors in this repository have negative or unproven edge, and some backtests didn't hold up in production — that's documented in `docs/backtests/`, not hidden. Automated trading on prediction markets is restricted or banned in a number of jurisdictions; checking that is on you. The code is provided "as is", with no warranty (see [LICENSE](LICENSE)).
 
-## Как это работает
+## How it works
 
 ```mermaid
 flowchart LR
-    PM[("Polymarket API")] --> DET["Детекторы"]
+    PM[("Polymarket API")] --> DET["Detectors"]
     DET --> SIG[("detector_signals")]
-    SIG --> ML["ML-калибровка"]
-    ML --> RISK["EV-сайзер и риск-гейты"]
-    RISK -->|"stage = live"| EXEC["Execution-демон"]
-    RISK -.->|"stage = shadow / virtual"| SHADOW["Запись без денег"]
+    SIG --> ML["ML calibration"]
+    ML --> RISK["EV sizer & risk gates"]
+    RISK -->|"stage = live"| EXEC["Execution daemon"]
+    RISK -.->|"stage = shadow / virtual"| SHADOW["Logged, no money"]
     EXEC --> PM
-    EXEC --> RES["Резолв и redeem"]
+    EXEC --> RES["Resolve & redeem"]
     RES --> SIG
 
     style RISK fill:#FFF3E0,stroke:#E65100,stroke-width:2px,color:#3E2723
     style EXEC fill:#FFEBEE,stroke:#C62828,stroke-width:2px,color:#3E2723
 ```
 
-Данные приходят из Gamma API, CLOB и WebSocket-стрима. Около двадцати детекторов ищут каждый свою неэффективность — копирование китов, календарные спреды, событийный дрейф, расхождение с Kalshi — и пишут сигнал в `detector_signals`. Beta-калибраторы и LightGBM переводят сырую уверенность детектора в вероятность, которой можно верить; EV-сайзер считает ставку по Келли, риск-гейты режут всё, что не проходит по exposure, просадке и свежести цены. Ордера уходят в CLOB как maker или taker, выигранные позиции редимятся, исход возвращается в базу и обучает калибраторы.
+Data comes from the Gamma API, the CLOB, and a WebSocket stream. About twenty detectors each hunt a different inefficiency — whale copy-trading, calendar spreads, event-driven drift, divergence from Kalshi — and write a signal to `detector_signals`. Beta calibrators and LightGBM turn a detector's raw confidence into a probability you can trust; an EV sizer computes the Kelly stake, and risk gates cut anything that fails exposure, drawdown, or price-staleness checks. Orders go to the CLOB as maker or taker, winning positions get redeemed, and the outcome flows back into the database to train the calibrators.
 
-Ключевая идея — **детектор не получает доступ к деньгам, пока не заслужит**. Каждый проходит четыре стадии, и переход между ними всегда ручной:
+The core idea: **a detector doesn't get access to money until it earns it.** Every detector goes through four stages, and promotion between them is always manual:
 
-| Стадия | Что происходит | Деньги |
+| Stage | What happens | Money |
 |---|---|---|
-| **Backtest** | гипотеза проверяется на исторических данных | $0 |
-| **Shadow** | детектор эмитит сигналы на живых данных, исход ждёт резолва | $0 |
-| **Virtual** | сигналы проходят весь пайплайн и «размещаются» виртуально | $0 |
-| **Live** | реальные ордера в CLOB | реальные |
+| **Backtest** | hypothesis checked against historical data | $0 |
+| **Shadow** | detector emits signals on live data, outcome awaits resolution | $0 |
+| **Virtual** | signals run through the full pipeline and get "placed" virtually | $0 |
+| **Live** | real orders on the CLOB | real |
 
-Стадия хранится в `detector_state.stage` и гасит доступ к деньгам независимо от того, работает ли эмиссия сигналов. Подробности и критерии промоута — [docs/detector_lifecycle.md](docs/detector_lifecycle.md).
+The stage lives in `detector_state.stage` and gates access to money independently of whether signal emission is running. Details and promotion criteria — [docs/detector_lifecycle.md](docs/detector_lifecycle.md).
 
-## Быстрый старт
+## Quick start
 
 ```bash
 git clone git@github.com:<your-user>/oraclepoly.git && cd oraclepoly
-cp .env.example .env          # заполнить DATABASE_URL, REDIS_URL, OPENAI_API_KEY, TELEGRAM_BOT_TOKEN
+cp .env.example .env          # fill in DATABASE_URL, REDIS_URL, OPENAI_API_KEY, TELEGRAM_BOT_TOKEN
 docker compose up -d --build
 ```
 
-Backend поднимется на `http://localhost:8001/docs` (Swagger), фронтенд — на `http://localhost:5173`.
+Backend comes up at `http://localhost:8001/docs` (Swagger), frontend at `http://localhost:5173`.
 
-`EXECUTION_ENABLED=false` в `.env` по умолчанию: без него бот считает и пишет в базу, но не отправляет ордера. Не меняйте это значение, пока не прогнали свои детекторы через shadow и virtual.
+`EXECUTION_ENABLED=false` in `.env` by default: without it the bot computes and writes to the database but doesn't send orders. Don't flip this until you've run your detectors through shadow and virtual.
 
 <details>
-<summary>Запуск без Docker</summary>
+<summary>Running without Docker</summary>
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-docker compose up -d postgres redis     # база и очередь всё же нужны
+docker compose up -d postgres redis     # still need the database and queue
 ./start.sh                              # backend :8001 + worker + frontend :5173
 ```
 
 </details>
 
-## Проверка
+## Verification
 
 ```bash
 pytest tests/ -v --tb=short
 ruff check app/ && cd client && npm run lint
 ```
 
-## Структура
+## Structure
 
 ```
 app/
-  detectors/    # детекторы, по файлу на гипотезу
-  calibration/  # Beta-калибраторы L1, EV-сайзер, Kelly
+  detectors/    # detectors, one file per hypothesis
+  calibration/  # L1 Beta calibrators, EV sizer, Kelly
   backtest/     # paired tick replay, Wilson CI
-  jobs/         # 89 cron-задач: сканы, execution, redeem, fit калибраторов
+  jobs/         # 89 cron jobs: scans, execution, redeem, calibrator fitting
   api/          # FastAPI endpoints
   core/         # config, scoring, auth, cache
-  services/     # БД, Polymarket CLOB, WebSocket, Telegram
-client/src/     # React 19 + Vite + Tailwind 4 — админ-панель по стадиям
-migrations/     # SQL, timestamp-prefix, state-tracked
-docs/           # архитектура, деплой, runbooks, отчёты бэктестов
+  services/     # DB, Polymarket CLOB, WebSocket, Telegram
+client/src/     # React 19 + Vite + Tailwind 4 — admin panel by stage
+migrations/     # SQL, timestamp-prefixed, state-tracked
+docs/           # architecture, deployment, runbooks, backtest reports
 ```
 
-## Стек
+## Stack
 
 Python 3.11 · FastAPI · PostgreSQL 16 (asyncpg) · Redis · LightGBM · React 19 · Vite · Tailwind 4 · Docker
 
-## Документация
+## Documentation
 
-- [Настройка окружения](docs/SETUP.md) · [Деплой](docs/DEPLOYMENT.md) · [Безопасность](docs/SECURITY.md)
-- [Detector Lifecycle](docs/detector_lifecycle.md) — источник правды по стадиям
-- [Архитектура](docs/architecture/) · [Backup & restore](docs/runbooks/backup_restore.md)
-- [Отчёты бэктестов](docs/backtests/) — включая те, где гипотеза не подтвердилась
-- [Как контрибьютить](CONTRIBUTING.md)
+- [Environment setup](docs/SETUP.md) · [Deployment](docs/DEPLOYMENT.md) · [Security](docs/SECURITY.md)
+- [Detector Lifecycle](docs/detector_lifecycle.md) — source of truth for stages
+- [Architecture](docs/architecture/) · [Backup & restore](docs/runbooks/backup_restore.md)
+- [Backtest reports](docs/backtests/) — including the ones where the hypothesis didn't hold up
+- [How to contribute](CONTRIBUTING.md)
 
-## Честный итог
+## The honest bottom line
 
-В деньги это не превратилось — говорю прямо, а не прячу за «исследовательский код» в шапке.
+This didn't turn into money — saying that plainly instead of hiding behind "research code" in the header above.
 
-Из ~20 детекторов до `live` дошёл фактически один — D3 (арбитраж связанных рынков). Направление он угадывал правильно (Wilson lower bound 61.9% на реальных сделках — не бэктест, живые исполнения), но экономика исполнения съедала edge: тонкий стакан, slippage, adverse selection на маркет-ордерах. По последнему замеру в репозитории (`docs/knowledge/prediction_markets.md`) — net отрицательный на 34 live-сделках; правки slippage-двойного-счёта и FOK-логики после этого деплоились, но эффект не переизмерялся заново, так что это не финальный приговор детектору — это фотография проблемы, которая была центральной весь проект: угадать направление оказалось проще, чем не отдать угаданное на исполнении. Остальные детекторы либо не прошли backtest, либо застряли в shadow/virtual с недоказанным edge — это не забытые черновики, это честный результат проверки гипотезы.
+Out of ~20 detectors, exactly one made it to `live`: D3 (cross-market arbitrage). It called direction correctly (Wilson lower bound 61.9% on real trades — not backtest, live fills), but execution economics ate the edge: thin order books, slippage, adverse selection on marketable orders. By the last measurement in this repo (`docs/knowledge/prediction_markets.md`), net was negative across 34 live trades; fixes to double-counted slippage and FOK-order logic shipped after that measurement and were never re-measured, so this isn't a final verdict on the detector — it's a snapshot of the problem that turned out to be central to the whole project: calling direction right was the easy half. Not giving it back on execution was the hard one. The rest of the detectors either failed backtest or sat in shadow/virtual with unproven edge — that's not neglect, that's an honest hypothesis test.
 
-Второй системный провал — разрыв между бэктестом и продом. Несколько детекторов, которые в backtest выглядели прибыльными, в проде показывали отрицательный net ROI: фиксированная комиссия и реальный slippage в бэктесте считались не так, как они работают на живом стакане. Урок дороже кода — методология валидации значила больше, чем количество детекторов.
+The second systemic failure was the gap between backtest and production. Several detectors that looked profitable on historical data showed negative net ROI in prod: fixed fees and real slippage in the backtest weren't modeled the way they actually behave on a live book. The lesson was worth more than the code — validation methodology mattered more than the number of detectors.
 
-**Что бы я поменял, если начинать заново:**
+**What I'd do differently starting over:**
 
-- **Меньше гипотез, глубже проверка.** Двадцать детекторов на слабом edge — хуже, чем три на сильном. Большая часть времени ушла на конвейер (detector → shadow → virtual → live), а не на то, чтобы довести до ума хотя бы один сильный edge.
-- **Исполнение — это и есть стратегия, не деталь.** D3 показал: правильно угадать направление — половина дела. Вторая половина — не отдать угаданное на слиппедже. Maker-ордера вместо taker, depth-гейт перед входом, вообще не заходить в тонкие стаканы — это должно было быть спроектировано с нуля, а не прикручено после того, как экономика показала минус.
-- **Честная валидация раньше.** `docs/backtests/` вместе с прод-результатами по одному и тому же детектору — минимальный набор, без которого промоут в live не должен случаться. Здесь это появилось после нескольких болезненных случаев, а не с первого дня.
-- **Кросс-платформенный арбитраж (Kalshi) не исследован.** Инфраструктура частично готова (`app/matchers/kalshi_polymarket_matcher.py`, `app/jobs/kalshi_*`), но API-доступ так и не был получен — структурная неэффективность между площадками, которую никто не проверил на практике.
+- **Fewer hypotheses, deeper validation.** Twenty detectors with weak edge is worse than three with strong edge. Most of the time went into the pipeline (detector → shadow → virtual → live) rather than into pushing even one strong edge to completion.
+- **Execution is the strategy, not a detail.** D3 showed that calling direction right is half the job. The other half is not giving it back to slippage. Maker orders instead of taker, a depth gate before entry, simply not trading thin books at all — this should have been designed in from day one, not bolted on after the economics turned negative.
+- **Honest validation, earlier.** `docs/backtests/` paired with production results for the same detector is the minimum bar a promotion to live should require. Here it showed up after a few painful cases, not from day one.
+- **Cross-platform arbitrage (Kalshi) was never explored.** The infrastructure is partially there (`app/matchers/kalshi_polymarket_matcher.py`, `app/jobs/kalshi_*`), but API access never came through — a structural inefficiency between venues that nobody got to test in practice.
 
-Если хотите развивать это дальше — сюда, а не в предсказание исхода: исполнение (maker-first, depth-aware sizing), кросс-платформенный арбитраж, честная бэктест-методология с реальным execution-costs моделированием. Signal-детекция здесь и так избыточна — именно последняя миля до денег недоделана.
+If you want to take this further, this is where the value is — not in predicting outcomes: execution (maker-first, depth-aware sizing), cross-platform arbitrage, and an honest backtest methodology with real execution-cost modeling. Signal detection is already oversupplied here; the last mile to actual money is what's unfinished.
 
-## Чего здесь нет
+## What isn't here
 
-Внутренние материалы в публичную версию не вошли: каталог `research/` (deep-research по гипотезам), `docs/superpowers/` (планы и design-спеки), прод-runbook'и с инфраструктурными деталями. Комментарии в коде и заголовки миграций местами ссылаются на эти файлы — ссылки оставлены как след происхождения решения, самих файлов в репозитории нет.
+Internal material didn't make it into the public version: the `research/` directory (deep-research writeups behind each hypothesis), `docs/superpowers/` (internal plans and design specs), production runbooks with infra details. Code comments and migration headers sometimes still reference these files — the references were left as a trace of where a decision came from; the files themselves aren't in this repository.
 
-История коммитов начата с нуля при публикации: приватный репозиторий содержал прод-детали, которые проще было не переносить, чем вычищать из 2700 коммитов.
+Commit history was started fresh at publication: the private repository carried production details that were simpler not to carry over than to scrub from 2,700 commits.
 
-## Лицензия
+## License
 
-MIT — см. [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE).
