@@ -1,53 +1,37 @@
-# Руководство по разработке (CONTRIBUTING)
+# Contributing
 
-Мы рады, что вы решили помочь в развитии OraclePoly! Этот документ содержит рекомендации и стандарты, которые помогут сделать процесс совместной работы эффективным.
+Thanks for considering a contribution to OraclePoly. This document covers code standards and the development process.
 
----
-
-## 🛠️ Стандарты кода
+## Code standards
 
 ### Backend (Python)
-- **Стиль:** Мы следуем [PEP 8](https://www.python.org/dev/peps/pep-0008/).
-- **Типизация:** Обязательное использование Type Hints для всех функций и классов.
-- **Документация:** Каждая публичная функция должна иметь docstring в формате Google Style.
-- **Линтинг:** Рекомендуется использовать `ruff` или `flake8`.
+- Style: [PEP 8](https://www.python.org/dev/peps/pep-0008/).
+- Typing: type hints required for all functions and classes.
+- Docs: every public function should have a Google-style docstring.
+- Linting: `ruff` (configured in `pyproject.toml`).
 
 ### Frontend (React/TypeScript)
-- **Стиль:** Мы следуем стандартным архитектурным паттернам React.
-- **Типизация:** Strict Mode для TypeScript. Минимум использования `any`.
-- **Компоненты:** Функциональные компоненты с хуками. Tailwind CSS для стайлинга.
-- **Линтинг:** ESLint + Prettier (настройки в корне проекта).
+- Standard React patterns, functional components with hooks.
+- TypeScript strict mode, minimal use of `any`.
+- Tailwind CSS for styling.
+- Linting: ESLint + Prettier (config at repo root).
 
----
+## Development process
 
-## 🚀 Процесс разработки
+1. **GitHub Flow.** Branch per feature or fix: `feature/cool-new-thing`, `fix/annoying-bug`.
+2. **Commits.** Meaningful messages in English (e.g. `feat: add whale segmentation by topic`).
+3. **Pull requests.** Describe the change, make sure tests pass locally, request a review.
 
-1. **GitHub Flow:** Создавайте отдельную ветку для каждой фичи или исправленного бага: `feature/cool-new-thing` или `fix/annoying-bug`.
-2. **Коммиты:** Используйте осмысленные сообщения на английском (например, `feat: add whale segmentation by topic`).
-3. **Pull Requests:** 
-   - Опишите внесенные изменения.
-   - Убедитесь, что все тесты проходят локально.
-   - Назначьте ревьюера из числа основных разработчиков.
+## Testing
 
----
-
-## 🧪 Тестирование
-
-Ни одна фича не должна попадать в `main` без тестов.
-
-- **Backend:** Запуск через `pytest`.
-- **Frontend:** Добавляйте тесты для критической логики и компонентов (если применимо).
+No feature lands on `main` without tests.
 
 ```bash
-# Запуск тестов бэкенда
 pytest tests/
 ```
 
----
+Add tests for critical logic and components on the frontend where it applies.
 
-## 🛡️ Безопасность
+## Security
 
-Если вы обнаружили уязвимость, пожалуйста, не создавайте GitHub Issue. Сообщите об этом лично мейнтейнерам проекта.
-
----
-*Благодарим за ваш вклад! Вместе мы сделаем OraclePoly лучшим инструментом для крипто-аналитиков.*
+If you find a vulnerability, don't open a public GitHub issue — report it to the maintainers directly.
