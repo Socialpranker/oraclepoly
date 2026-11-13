@@ -1,3 +1,5 @@
+<img src="assets/logo.svg" width="96" height="96" alt="oraclepoly logo">
+
 # OraclePoly
 
 A trading bot for [Polymarket](https://polymarket.com) prediction markets: detectors look for a gap between price and probability, ML calibration turns a detector's raw confidence into an honest probability, a risk engine sizes the bet, and an execution daemon places the order in the CLOB. From signal to fill, no human in the loop.
